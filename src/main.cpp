@@ -9,8 +9,8 @@
 #define DHTPIN 15     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT11   // DHT 11
  
-#define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
-#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
+#define IOT_PUBLISH_TOPIC   "esp32/pub"
+#define IOT_SUBSCRIBE_TOPIC "esp32/sub"
  
 float h ;
 float t;
@@ -31,7 +31,7 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
   Serial.println(message);
 }
 
-void connectAWS()
+void connectIOT()
 {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -45,19 +45,19 @@ void connectAWS()
   }
  
   // Configure WiFiClientSecure to use the AWS IoT device credentials
-  net.setCACert(AWS_CERT_CA);
-  net.setCertificate(AWS_CERT_CRT);
-  net.setPrivateKey(AWS_CERT_PRIVATE);
+  //net.setCACert(CERT_CA);
+  net.setCACert(CERT_CA);
+
  
   // Connect to the MQTT broker on the AWS endpoint we defined earlier
-  client.setServer(AWS_IOT_ENDPOINT, 8883);
+  client.setServer(IOT_ENDPOINT, 8883);
  
   // Create a message handler
   client.setCallback(messageHandler);
  
-  Serial.println("Connecting to AWS IOT");
+  Serial.println("Connecting to MQTT Server");
  
-  while (!client.connect(THINGNAME))
+  while (!client.connect("Pepe"))
   {
     Serial.print(".");
     delay(100);
@@ -65,32 +65,32 @@ void connectAWS()
  
   if (!client.connected())
   {
-    Serial.println("AWS IoT Timeout!");
+    Serial.println("Server Timeout!");
     return;
   }
  
   // Subscribe to a topic
-  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+  client.subscribe(IOT_SUBSCRIBE_TOPIC);
  
-  Serial.println("AWS IoT Connected!");
+  Serial.println("IoT Connected!");
 }
  
 void publishMessage()
 {
   StaticJsonDocument<200> doc;
-  doc["humidity"] = h;
-  doc["temperature"] = t;
+  doc["humedad"] = h;
+  doc["temperatura"] = t;
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
  
-  client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+  client.publish(IOT_PUBLISH_TOPIC, jsonBuffer);
 }
  
  
 void setup()
 {
   Serial.begin(115200);
-  connectAWS();
+  connectIOT();
   dht.begin();
 }
  
@@ -106,13 +106,13 @@ void loop()
     return;
   }
  
-  Serial.print(F("Humidity: "));
+  Serial.print(F("Humedad: "));
   Serial.print(h);
-  Serial.print(F("%  Temperature: "));
+  Serial.print(F("%  Temperatura: "));
   Serial.print(t);
   Serial.println(F("°C "));
  
   publishMessage();
   client.loop();
-  delay(1000);
+  delay(5000);
 }
